@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ผลการทดสอบ - Intelligence Assessment</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .score-ring {
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s ease;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4 min-h-screen">
+
+    <div class="w-full max-w-4xl">
+        
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="text-5xl mb-4">🎓</div>
+            <h1 class="text-4xl font-bold text-white mb-2">ผลการทดสอบ</h1>
+            <p class="text-white/80">รายงานผลการประเมินความสามารถ</p>
+        </div>
+
+        <!-- Results Container -->
+        <div id="results-content">
+            
+            <!-- IQ Results -->
+            <div id="iq-results" class="card rounded-3xl p-8 shadow-2xl mb-6">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">แบบทดสอบ IQ</h2>
+                    <p class="text-gray-600">Cognitive Intelligence</p>
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center justify-center gap-8 mb-6">
+                    <div class="text-center">
+                        <div class="text-6xl font-bold gradient-text mb-2" id="iq-score">-</div>
+                        <div class="text-sm text-gray-500">คะแนน IQ</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-gray-700 mb-2" id="iq-correct">-</div>
+                        <div class="text-sm text-gray-500">ตอบถูก / ทั้งหมด</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-gray-700 mb-2" id="iq-percentage">-</div>
+                        <div class="text-sm text-gray-500">เปอร์เซ็นต์</div>
+                    </div>
+                </div>
+
+                <div id="iq-interpretation" class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-6 text-center">
+                    <p class="text-gray-700 text-lg font-medium" id="iq-level">-</p>
+                    <p class="text-gray-600 mt-2" id="iq-description">-</p>
+                </div>
+            </div>
+
+            <!-- EQ Results -->
+            <div id="eq-results" class="card rounded-3xl p-8 shadow-2xl mb-6">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">แบบทดสอบ EQ</h2>
+                    <p class="text-gray-600">Emotional Intelligence</p>
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center justify-center gap-8 mb-6">
+                    <div class="text-center">
+                        <div class="text-6xl font-bold gradient-text mb-2" id="eq-score">-</div>
+                        <div class="text-sm text-gray-500">คะแนน EQ</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-gray-700 mb-2" id="eq-percentage">-</div>
+                        <div class="text-sm text-gray-500">เปอร์เซ็นต์</div>
+                    </div>
+                </div>
+
+                <div id="eq-personality" class="rounded-2xl p-6 text-center mb-6">
+                    <div class="text-5xl mb-3" id="personality-icon">-</div>
+                    <h3 class="text-2xl font-bold mb-2" id="personality-name">-</h3>
+                    <p class="text-gray-600" id="personality-description">-</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <button onclick="downloadPDF()" class="px-8 py-4 rounded-xl font-semibold text-white shadow-lg transition-all transform hover:scale-105"
+                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                ดาวน์โหลดรายงาน PDF
+            </button>
+            <button onclick="window.location.href='index.html'" class="px-8 py-4 rounded-xl font-semibold bg-white text-gray-700 border-2 border-white/50 hover:bg-gray-50 transition-all">
+                กลับหน้าแรก
+            </button>
+        </div>
+
+    </div>
+
+    <script src="eq.js"></script>
+    <script>
+        // Load and display results
+        function loadResults() {
+            const iqData = JSON.parse(localStorage.getItem('iqScore') || 'null');
+            const eqData = JSON.parse(localStorage.getItem('eqScore') || 'null');
+
+            if (!iqData || !eqData) {
+                alert('ไม่พบข้อมูลผลการทดสอบ');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Display IQ Results
+            document.getElementById('iq-score').textContent = iqData.iqScore;
+            document.getElementById('iq-correct').textContent = `${iqData.correct} / ${iqData.total}`;
+            document.getElementById('iq-percentage').textContent = `${iqData.percentage}%`;
+
+            // IQ Interpretation
+            let iqLevel = '';
+            let iqDesc = '';
+            if (iqData.iqScore >= 130) {
+                iqLevel = 'ความสามารถสูงมาก';
+                iqDesc = 'คุณมีความสามารถในการคิดวิเคราะห์และแก้ปัญหาที่ยอดเยี่ยม';
+            } else if (iqData.iqScore >= 115) {
+                iqLevel = 'ความสามารถสูง';
+                iqDesc = 'คุณมีความสามารถในการคิดวิเคราะห์ที่ดีเยี่ยม';
+            } else if (iqData.iqScore >= 100) {
+                iqLevel = 'ความสามารถเหนือค่าเฉลี่ย';
+                iqDesc = 'คุณมีความสามารถในการคิดวิเคราะห์ที่ดี';
+            } else if (iqData.iqScore >= 85) {
+                iqLevel = 'ความสามารถปานกลาง';
+                iqDesc = 'คุณมีความสามารถในการคิดวิเคราะห์ในระดับปานกลาง';
+            } else {
+                iqLevel = 'ควรพัฒนา';
+                iqDesc = 'คุณสามารถพัฒนาทักษะการคิดวิเคราะห์ได้อีกมาก';
+            }
+
+            document.getElementById('iq-level').textContent = iqLevel;
+            document.getElementById('iq-description').textContent = iqDesc;
+
+            // Display EQ Results
+            document.getElementById('eq-score').textContent = eqData.eqScore; // Use standardized EQ score
+            document.getElementById('eq-percentage').textContent = `${eqData.percentage}%`;
+
+            if (eqData.personality) {
+                const personality = eqData.personality;
+                document.getElementById('personality-name').textContent = personality.name;
+                document.getElementById('personality-description').textContent = personality.description;
+                
+                // Set personality icon based on type
+                const icons = {
+                    'bear': '🐻',
+                    'tiger': '🐯',
+                    'dolphin': '🐬',
+                    'owl': '🦉'
+                };
+                document.getElementById('personality-icon').textContent = icons[personality.type] || '✨';
+                
+                // Style the personality card
+                const card = document.getElementById('eq-personality');
+                card.style.background = `linear-gradient(135deg, ${personality.color}15 0%, ${personality.color}30 100%)`;
+                card.style.border = `2px solid ${personality.color}40`;
+            }
+        }
+
+        // PDF Generation
+        async function downloadPDF() {
+            try {
+                const { jsPDF } = window.jspdf;
+                if (!jsPDF) {
+                    alert('กรุณารอสักครู่แล้วลองใหม่');
+                    return;
+                }
+
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const iqData = JSON.parse(localStorage.getItem('iqScore'));
+                const eqData = JSON.parse(localStorage.getItem('eqScore'));
+
+                // Set font
+                pdf.setFont('helvetica');
+
+                // Header with gradient effect (using colored rectangles)
+                pdf.setFillColor(102, 126, 234);
+                pdf.rect(0, 0, 210, 40, 'F');
+                
+                pdf.setTextColor(255, 255, 255);
+                pdf.setFontSize(28);
+                pdf.text('Intelligence Assessment', 105, 20, { align: 'center' });
+
+                pdf.setFontSize(14);
+                pdf.text('รายงานผลการประเมินความสามารถ', 105, 30, { align: 'center' });
+
+                // Date
+                pdf.setFontSize(10);
+                const date = new Date().toLocaleDateString('th-TH', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                pdf.text('วันที่: ' + date, 105, 36, { align: 'center' });
+
+                // IQ Section
+                pdf.setTextColor(0, 0, 0);
+                pdf.setFontSize(18);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text('IQ Assessment Results', 20, 55);
+                
+                pdf.setFont('helvetica', 'normal');
+                pdf.setFontSize(12);
+                pdf.setTextColor(60, 60, 60);
+                
+                // IQ Box
+                pdf.setDrawColor(102, 126, 234);
+                pdf.setLineWidth(0.5);
+                pdf.rect(20, 62, 170, 35);
+                
+                pdf.setFontSize(14);
+                pdf.setTextColor(102, 126, 234);
+                pdf.text(`IQ Score: ${iqData.iqScore}`, 30, 72);
+                
+                pdf.setFontSize(11);
+                pdf.setTextColor(80, 80, 80);
+                pdf.text(`Correct Answers: ${iqData.correct} / ${iqData.total}`, 30, 80);
+                pdf.text(`Percentage: ${iqData.percentage}%`, 30, 87);
+
+                // IQ Level
+                let iqLevel = '';
+                if (iqData.iqScore >= 130) iqLevel = 'Very Superior Intelligence';
+                else if (iqData.iqScore >= 120) iqLevel = 'Superior Intelligence';
+                else if (iqData.iqScore >= 110) iqLevel = 'High Average Intelligence';
+                else if (iqData.iqScore >= 90) iqLevel = 'Average Intelligence';
+                else iqLevel = 'Room for Development';
+
+                pdf.setFontSize(10);
+                pdf.setTextColor(100, 100, 100);
+                pdf.text(`Level: ${iqLevel}`, 30, 94);
+
+                // EQ Section
+                pdf.setTextColor(0, 0, 0);
+                pdf.setFontSize(18);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text('EQ Assessment Results', 20, 110);
+                
+                pdf.setFont('helvetica', 'normal');
+                
+                // EQ Box
+                pdf.setDrawColor(102, 126, 234);
+                pdf.rect(20, 117, 170, 60);
+                
+                pdf.setFontSize(14);
+                pdf.setTextColor(102, 126, 234);
+                pdf.text(`EQ Score: ${eqData.eqScore}`, 30, 127);
+                
+                pdf.setFontSize(11);
+                pdf.setTextColor(80, 80, 80);
+                pdf.text(`Raw Points: ${eqData.totalPoints} / ${eqData.maxPoints}`, 30, 135);
+                pdf.text(`Percentage: ${eqData.percentage}%`, 30, 142);
+
+                if (eqData.personality) {
+                    pdf.setFontSize(12);
+                    pdf.setTextColor(102, 126, 234);
+                    pdf.text(`Personality Type: ${eqData.personality.name}`, 30, 152);
+                    
+                    // Description with word wrap
+                    pdf.setFontSize(10);
+                    pdf.setTextColor(80, 80, 80);
+                    const description = eqData.personality.description;
+                    const lines = pdf.splitTextToSize(description, 150);
+                    pdf.text(lines, 30, 160);
+                }
+
+                // Summary Section
+                pdf.setFontSize(16);
+                pdf.setFont('helvetica', 'bold');
+                pdf.setTextColor(0, 0, 0);
+                pdf.text('Summary', 20, 195);
+                
+                pdf.setFont('helvetica', 'normal');
+                pdf.setFontSize(10);
+                pdf.setTextColor(80, 80, 80);
+                
+                const summary = [
+                    'This assessment evaluated both cognitive (IQ) and emotional (EQ) intelligence.',
+                    'IQ measures logical thinking, pattern recognition, and problem-solving abilities.',
+                    'EQ measures emotional awareness, self-regulation, and social skills.',
+                    'Both types of intelligence contribute to overall success and well-being.'
+                ];
+                
+                let yPos = 205;
+                summary.forEach(line => {
+                    const wrapped = pdf.splitTextToSize(line, 170);
+                    pdf.text(wrapped, 20, yPos);
+                    yPos += wrapped.length * 5;
+                });
+
+                // Footer
+                pdf.setDrawColor(200, 200, 200);
+                pdf.line(20, 270, 190, 270);
+                
+                pdf.setFontSize(8);
+                pdf.setTextColor(150, 150, 150);
+                pdf.text('Intelligence Assessment System - Confidential Report', 105, 280, { align: 'center' });
+                pdf.text('This report is for personal development purposes only', 105, 285, { align: 'center' });
+
+                // Save PDF
+                pdf.save('intelligence-assessment-report.pdf');
+            } catch (error) {
+                console.error('PDF Error:', error);
+                alert('เกิดข้อผิดพลาดในการสร้าง PDF กรุณาลองใหม่อีกครั้ง');
+            }
+        }
+
+        // Load results on page load
+        window.addEventListener('DOMContentLoaded', loadResults);
+    </script>
+
+</body>
+</html>
