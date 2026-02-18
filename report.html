@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รายงานผล - Intelligence Assessment</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* ═══════════════════════════════════════════════════════
+           SCREEN STYLES — preview the report before printing
+        ═══════════════════════════════════════════════════════ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: #dde0ea;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 28px 16px 48px;
+            gap: 16px;
+        }
+
+        /* ── Top action bar (screen only) ── */
+        .action-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 210mm;
+            max-width: 100%;
+        }
+        .back-btn {
+            font-family: 'Sarabun', sans-serif;
+            font-size: 14px;
+            color: #555;
+            background: #fff;
+            border: 1.5px solid #d0d0d8;
+            border-radius: 8px;
+            padding: 8px 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.15s;
+        }
+        .back-btn:hover { background: #f5f5f7; }
+        .print-btn {
+            font-family: 'Sarabun', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 10px;
+            padding: 10px 28px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(102,126,234,0.4);
+            transition: opacity 0.15s, transform 0.15s;
+        }
+        .print-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .hint {
+            font-size: 12px;
+            color: #777;
+        }
+
+        /* ── The A4 page card ── */
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            background: #fff;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           REPORT LAYOUT
+        ═══════════════════════════════════════════════════════ */
+
+        /* ── Header ── */
+        .rpt-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 22px 32px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-shrink: 0;
+        }
+        .rpt-title      { font-size: 22px; font-weight: 800; line-height: 1.2; }
+        .rpt-subtitle   { font-size: 12px; opacity: 0.8; margin-top: 3px; }
+        .rpt-header-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+        .rpt-date       { font-size: 11px; opacity: 0.72; }
+        .rpt-confidential {
+            font-size: 10px; font-weight: 600; letter-spacing: 0.5px;
+            background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 99px; padding: 2px 10px;
+        }
+
+        /* ── Body ── */
+        .rpt-body {
+            flex: 1;
+            padding: 20px 28px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* ── Two-column score band ── */
+        .score-band {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .score-panel {
+            background: #fafafa;
+            border: 1.5px solid #eeeef4;
+            border-radius: 12px;
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 10px;
+            border-bottom: 1.5px solid #ececf4;
+        }
+        .panel-title { font-size: 14px; font-weight: 700; color: #1f2937; }
+
+        .badge {
+            font-size: 10px; font-weight: 600; letter-spacing: 0.4px;
+            padding: 2px 9px; border-radius: 99px; color: #fff;
+        }
+        .badge-iq { background: #667eea; }
+        .badge-eq { background: #ec4899; }
+
+        /* ── Metric boxes ── */
+        .metrics-row { display: flex; gap: 8px; }
+        .metric-box {
+            flex: 1;
+            text-align: center;
+            background: #fff;
+            border: 1.5px solid #e8e8f0;
+            border-radius: 9px;
+            padding: 10px 6px 8px;
+        }
+        .metric-value {
+            font-size: 28px; font-weight: 800; line-height: 1; display: block;
+        }
+        .metric-value.iq-color {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .metric-value.eq-color {
+            background: linear-gradient(135deg, #ec4899, #f97316);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .metric-value.plain { font-size: 20px; color: #374151; }
+        .metric-label { font-size: 10px; color: #9ca3af; margin-top: 3px; display: block; }
+
+        /* ── Interpretation strip ── */
+        .interp {
+            border-radius: 8px; padding: 10px 14px;
+            border-left: 3px solid #667eea;
+            background: linear-gradient(135deg, #eef0ff, #e8f0fe);
+        }
+        .interp.eq {
+            border-left-color: #ec4899;
+            background: linear-gradient(135deg, #fdf0f6, #fff0f3);
+        }
+        .interp-title { font-size: 12px; font-weight: 700; color: #1f2937; margin-bottom: 2px; }
+        .interp-desc  { font-size: 11px; color: #4b5563; line-height: 1.45; }
+
+        /* ── Personality card ── */
+        .personality-card {
+            display: flex; align-items: center; gap: 12px;
+            background: #fff; border: 1.5px solid #f9d5e7;
+            border-radius: 9px; padding: 10px 14px;
+        }
+        .p-icon { font-size: 28px; line-height: 1; flex-shrink: 0; }
+        .p-name { font-size: 14px; font-weight: 700; color: #1f2937; }
+        .p-desc { font-size: 11px; color: #6b7280; line-height: 1.4; margin-top: 2px; }
+
+        /* ── Section divider ── */
+        .divider {
+            display: flex; align-items: center; gap: 10px;
+            color: #9ca3af; font-size: 11px; font-weight: 600;
+            letter-spacing: 0.6px; text-transform: uppercase;
+        }
+        .divider::before, .divider::after {
+            content: ''; flex: 1; height: 1px; background: #e8e8f0;
+        }
+
+        /* ── Advice section ── */
+        .advice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .advice-box {
+            background: #fff; border: 1.5px solid #ececf4;
+            border-radius: 10px; padding: 14px 16px;
+        }
+        .advice-title {
+            font-size: 12px; font-weight: 700;
+            margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+        }
+        .advice-title.iq { color: #4f46e5; }
+        .advice-title.eq { color: #db2777; }
+        .advice-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+        .advice-list li {
+            font-size: 11.5px; color: #374151; line-height: 1.5;
+            display: flex; gap: 7px; align-items: flex-start;
+        }
+        .advice-list li::before {
+            content: '▸'; flex-shrink: 0; font-size: 10px; margin-top: 1px;
+        }
+        .advice-box.iq .advice-list li::before { color: #667eea; }
+        .advice-box.eq .advice-list li::before { color: #ec4899; }
+
+        /* ── Footer ── */
+        .rpt-footer {
+            padding: 10px 28px 14px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-top: 1px solid #ececf4;
+            flex-shrink: 0;
+        }
+        .footer-brand { font-size: 10px; color: #b0b0c0; font-weight: 500; }
+        .footer-note  { font-size: 10px; color: #b0b0c0; }
+
+        /* ═══════════════════════════════════════════════════════
+           PRINT STYLES
+           @page = true A4, zero margin (padding is built into layout).
+           Force color printing. Hide the action bar.
+        ═══════════════════════════════════════════════════════ */
+        @media print {
+            @page { size: A4 portrait; margin: 0; }
+
+            body { background: none; padding: 0; display: block; }
+
+            .action-bar, .hint { display: none !important; }
+
+            .page {
+                width: 210mm;
+                min-height: 297mm;
+                box-shadow: none;
+                border-radius: 0;
+            }
+
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Action bar — hidden when printing -->
+    <div class="action-bar">
+        <a href="result.html" class="back-btn">← กลับหน้าผล</a>
+        <button class="print-btn" onclick="window.print()">⬇ บันทึก / พิมพ์ PDF</button>
+    </div>
+    <p class="hint">เลือก "Save as PDF" ในหน้าต่างปริ้นท์เพื่อดาวน์โหลด</p>
+
+    <!-- ══════════════ THE A4 REPORT ══════════════ -->
+    <div class="page">
+
+        <div class="rpt-header">
+            <div>
+                <div class="rpt-title">Intelligence Assessment Report</div>
+                <div class="rpt-subtitle">รายงานผลการประเมินความสามารถ</div>
+            </div>
+            <div class="rpt-header-right">
+                <div class="rpt-date"         id="rpt-date">—</div>
+                <div class="rpt-confidential">🔒 Confidential</div>
+            </div>
+        </div>
+
+        <div class="rpt-body">
+
+            <!-- Score panels -->
+            <div class="score-band">
+
+                <!-- IQ Panel -->
+                <div class="score-panel">
+                    <div class="panel-header">
+                        <span class="panel-title">แบบทดสอบ IQ</span>
+                        <span class="badge badge-iq">Cognitive</span>
+                    </div>
+                    <div class="metrics-row">
+                        <div class="metric-box">
+                            <span class="metric-value iq-color" id="r-iq-score">—</span>
+                            <span class="metric-label">คะแนน IQ</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-value plain" id="r-iq-correct">—</span>
+                            <span class="metric-label">ตอบถูก / ทั้งหมด</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-value plain" id="r-iq-pct">—</span>
+                            <span class="metric-label">เปอร์เซ็นต์</span>
+                        </div>
+                    </div>
+                    <div class="interp">
+                        <div class="interp-title" id="r-iq-level">—</div>
+                        <div class="interp-desc"  id="r-iq-desc">—</div>
+                    </div>
+                </div>
+
+                <!-- EQ Panel -->
+                <div class="score-panel">
+                    <div class="panel-header">
+                        <span class="panel-title">แบบทดสอบ EQ</span>
+                        <span class="badge badge-eq">Emotional</span>
+                    </div>
+                    <div class="metrics-row">
+                        <div class="metric-box">
+                            <span class="metric-value eq-color" id="r-eq-score">—</span>
+                            <span class="metric-label">คะแนน EQ</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-value plain" id="r-eq-pct">—</span>
+                            <span class="metric-label">เปอร์เซ็นต์</span>
+                        </div>
+                    </div>
+                    <div class="interp eq">
+                        <div class="interp-title" id="r-personality-name">—</div>
+                        <div class="interp-desc"  id="r-personality-desc">—</div>
+                    </div>
+                    <div class="personality-card" id="r-personality-card">
+                        <div class="p-icon" id="r-personality-icon">—</div>
+                        <div>
+                            <div class="p-name" id="r-personality-name2">—</div>
+                            <div class="p-desc" id="r-personality-desc2">—</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /score-band -->
+
+            <div class="divider">คำแนะนำและการพัฒนา</div>
+
+            <div class="advice-grid">
+                <div class="advice-box iq">
+                    <div class="advice-title iq">💡 ด้านเชาวน์ปัญญา (IQ)</div>
+                    <ul class="advice-list" id="r-iq-advice"></ul>
+                </div>
+                <div class="advice-box eq">
+                    <div class="advice-title eq">💡 ด้านความฉลาดทางอารมณ์ (EQ)</div>
+                    <ul class="advice-list" id="r-eq-advice"></ul>
+                </div>
+            </div>
+
+        </div><!-- /rpt-body -->
+
+        <div class="rpt-footer">
+            <span class="footer-brand">Intelligence Assessment System</span>
+            <span class="footer-note" id="rpt-footer-date">—</span>
+        </div>
+
+    </div><!-- /page -->
+
+    <script src="resultData.js"></script>
+    <script>
+        (function () {
+            const iqData = JSON.parse(localStorage.getItem('iqScore') || 'null');
+            const eqData = JSON.parse(localStorage.getItem('eqScore') || 'null');
+
+            const dateStr = new Date().toLocaleDateString('th-TH', {
+                year: 'numeric', month: 'long', day: 'numeric'
+            });
+            document.getElementById('rpt-date').textContent        = 'วันที่ ' + dateStr;
+            document.getElementById('rpt-footer-date').textContent = 'สร้างเมื่อ ' + dateStr;
+
+            if (!iqData || !eqData) {
+                document.querySelector('.rpt-body').innerHTML =
+                    '<div style="text-align:center;padding:80px 40px;color:#9ca3af;font-size:15px;">' +
+                    'ไม่พบข้อมูลผลการทดสอบ<br><br>' +
+                    '<small>กรุณาทำแบบทดสอบก่อนดูรายงาน</small></div>';
+                return;
+            }
+
+            // IQ
+            document.getElementById('r-iq-score').textContent   = iqData.iqScore;
+            document.getElementById('r-iq-correct').textContent = `${iqData.correct} / ${iqData.total}`;
+            document.getElementById('r-iq-pct').textContent     = `${iqData.percentage}%`;
+
+            const level = getIQLevel(iqData.iqScore);
+            document.getElementById('r-iq-level').textContent = level.label;
+            document.getElementById('r-iq-desc').textContent  = level.description;
+
+            // EQ
+            document.getElementById('r-eq-score').textContent = eqData.eqScore;
+            document.getElementById('r-eq-pct').textContent   = `${eqData.percentage}%`;
+
+            if (eqData.personality) {
+                const p    = eqData.personality;
+                const icon = getPersonalityIcon(p.type);
+
+                document.getElementById('r-personality-name').textContent  = p.name;
+                document.getElementById('r-personality-desc').textContent  = p.description;
+                document.getElementById('r-personality-icon').textContent  = icon;
+                document.getElementById('r-personality-name2').textContent = p.name;
+                document.getElementById('r-personality-desc2').textContent = p.description;
+
+                if (p.color) {
+                    const card = document.getElementById('r-personality-card');
+                    card.style.borderColor = p.color + '55';
+                    card.style.background  = p.color + '12';
+                }
+            }
+
+            // Advice
+            const advice = getAdvice(iqData.iqScore, eqData.eqScore);
+            const iqList = document.getElementById('r-iq-advice');
+            const eqList = document.getElementById('r-eq-advice');
+
+            advice.iqAdvice.forEach(text => {
+                const li = document.createElement('li');
+                li.textContent = text;
+                iqList.appendChild(li);
+            });
+            advice.eqAdvice.forEach(text => {
+                const li = document.createElement('li');
+                li.textContent = text;
+                eqList.appendChild(li);
+            });
+        })();
+    </script>
+</body>
+</html>

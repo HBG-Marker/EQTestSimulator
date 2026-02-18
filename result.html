@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ผลการทดสอบ - Intelligence Assessment</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Fonts: Inter for UI, Sarabun for Thai PDF rendering -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+
+    <style>
+        body {
+            font-family: 'Inter', 'Sarabun', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(10px);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ── Hidden PDF Print Card ─────────────────────────────
+           This div is rendered off-screen, captured by html2canvas,
+           and embedded as an image inside jsPDF.
+           All Thai text renders correctly because the browser
+           handles the font — no font embedding in jsPDF needed.
+        ──────────────────────────────────────────────────────── */
+        /*
+         * #pdf-card — hidden off-screen element captured by html2canvas.
+         * Width is fixed at 794px (A4 @ 96 dpi = 210 mm).
+         * Total height must stay ≤ 1123px (A4 @ 96 dpi = 297 mm) for single page.
+         * All sizes are tuned to fit comfortably within that budget.
+         */
+        #pdf-card {
+            position: absolute;
+            top: 0;
+            left: -9999px;
+            width: 794px;
+            background: #f8f7ff;
+            font-family: 'Sarabun', 'Inter', sans-serif;
+            color: #1f2937;
+            padding: 0;
+            /* Prevent the browser from collapsing the off-screen element */
+            visibility: hidden;
+        }
+
+        /* ── Header — target ~72px tall ── */
+        .pdf-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 16px 36px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .pdf-header-left h1  { font-size: 20px; font-weight: 800; margin: 0 0 2px; letter-spacing: 0.3px; }
+        .pdf-header-left p   { font-size: 12px; opacity: 0.8; margin: 0; }
+        .pdf-header-right    { text-align: right; }
+        .pdf-header-right .date { font-size: 11px; opacity: 0.75; }
+        .pdf-header-right .badge {
+            display: inline-block; margin-top: 4px;
+            font-size: 10px; font-weight: 600; letter-spacing: 0.6px;
+            background: rgba(255,255,255,0.2); border-radius: 99px;
+            padding: 2px 10px; border: 1px solid rgba(255,255,255,0.35);
+        }
+
+        /* ── Two-column body layout ── */
+        .pdf-body {
+            padding: 16px 28px 14px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto auto;
+            gap: 12px;
+        }
+
+        /* Section titles spanning behaviour */
+        .pdf-section-header {
+            grid-column: 1 / -1;           /* full width */
+            display: none;                  /* hidden — sections are self-labelled */
+        }
+
+        /* IQ takes left column, EQ takes right column */
+        .pdf-col-iq { grid-column: 1; display: flex; flex-direction: column; gap: 10px; }
+        .pdf-col-eq { grid-column: 2; display: flex; flex-direction: column; gap: 10px; }
+
+        /* Advice spans full width */
+        .pdf-col-advice {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 12px;
+        }
+
+        /* Column header pill */
+        .pdf-col-title {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 14px; font-weight: 700; color: #1f2937;
+        }
+        .pdf-col-title .pill {
+            font-size: 10px; font-weight: 600; letter-spacing: 0.6px;
+            padding: 1px 8px; border-radius: 99px; color: #fff;
+        }
+        .pill-iq { background: #667eea; }
+        .pill-eq { background: #ec4899; }
+
+        /* Score boxes inside each column */
+        .pdf-score-row { display: flex; gap: 8px; }
+        .pdf-score-box {
+            flex: 1; border-radius: 10px; padding: 10px 12px;
+            text-align: center; border: 1.5px solid #e5e7eb; background: #fff;
+        }
+        .pdf-score-box .big {
+            font-size: 32px; font-weight: 800; line-height: 1;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .pdf-score-box .big-eq {
+            font-size: 32px; font-weight: 800; line-height: 1;
+            background: linear-gradient(135deg, #ec4899, #f97316);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .pdf-score-box .sub   { font-size: 16px; font-weight: 700; color: #374151; }
+        .pdf-score-box .label { font-size: 10px; color: #9ca3af; margin-top: 2px; }
+
+        /* Interpretation band */
+        .pdf-interpretation {
+            border-radius: 8px; padding: 10px 14px;
+            border-left: 3px solid #667eea;
+            background: linear-gradient(135deg, #ede9fe, #dbeafe);
+        }
+        .pdf-interpretation.eq-int {
+            border-left-color: #ec4899;
+            background: linear-gradient(135deg, #fce7f3, #fff1f2);
+        }
+        .pdf-interpretation .int-title { font-size: 12px; font-weight: 700; margin: 0 0 2px; color: #1f2937; }
+        .pdf-interpretation .int-desc  { font-size: 11px; color: #4b5563; margin: 0; line-height: 1.4; }
+
+        /* Personality card (EQ column) */
+        .pdf-personality {
+            display: flex; align-items: center; gap: 10px;
+            background: #fff; border: 1.5px solid #fce7f3;
+            border-radius: 10px; padding: 10px 14px;
+        }
+        .pdf-personality .icon { font-size: 28px; line-height: 1; }
+        .pdf-personality .name { font-size: 13px; font-weight: 700; color: #1f2937; margin: 0 0 2px; }
+        .pdf-personality .desc { font-size: 11px; color: #6b7280; margin: 0; line-height: 1.35; }
+
+        /* Advice boxes */
+        .pdf-advice-box {
+            flex: 1; background: #fff; border-radius: 10px;
+            padding: 12px 14px; border: 1.5px solid #e5e7eb;
+        }
+        .pdf-advice-box h4 { font-size: 12px; font-weight: 700; margin: 0 0 8px; }
+        .pdf-advice-box h4.iq-h { color: #4f46e5; }
+        .pdf-advice-box h4.eq-h { color: #db2777; }
+        .pdf-advice-box ul { margin: 0; padding: 0 0 0 14px; }
+        .pdf-advice-box ul li { font-size: 11px; color: #374151; margin-bottom: 5px; line-height: 1.45; }
+
+        /* Footer */
+        .pdf-footer {
+            padding: 10px 28px 12px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-top: 1.5px solid #e5e7eb;
+        }
+        .pdf-footer .brand       { font-size: 10px; color: #9ca3af; font-weight: 500; }
+        .pdf-footer .confidential {
+            font-size: 10px; color: #9ca3af;
+            background: #f3f4f6; border-radius: 99px;
+            padding: 2px 8px; border: 1px solid #e5e7eb;
+        }
+
+    </style>
+</head>
+<body class="flex items-center justify-center p-4 min-h-screen">
+
+<!-- ═══════════════════════════ MAIN UI ══════════════════════════════════════ -->
+<div class="w-full max-w-4xl">
+
+    <div class="text-center mb-8">
+        <div class="text-5xl mb-4">🎓</div>
+        <h1 class="text-4xl font-bold text-white mb-2">ผลการทดสอบ</h1>
+        <p class="text-white/80">รายงานผลการประเมินความสามารถ</p>
+    </div>
+
+    <div id="results-content">
+
+        <!-- IQ Card -->
+        <div class="card rounded-3xl p-8 shadow-2xl mb-6">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">แบบทดสอบ IQ</h2>
+                <p class="text-gray-600">Cognitive Intelligence</p>
+            </div>
+
+            <div class="flex flex-col md:flex-row items-center justify-center gap-8 mb-6">
+                <div class="text-center">
+                    <div class="text-6xl font-bold gradient-text mb-2" id="iq-score">-</div>
+                    <div class="text-sm text-gray-500">คะแนน IQ</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-gray-700 mb-2" id="iq-correct">-</div>
+                    <div class="text-sm text-gray-500">ตอบถูก / ทั้งหมด</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-gray-700 mb-2" id="iq-percentage">-</div>
+                    <div class="text-sm text-gray-500">เปอร์เซ็นต์</div>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-6 text-center">
+                <p class="text-gray-700 text-lg font-medium" id="iq-level">-</p>
+                <p class="text-gray-600 mt-2" id="iq-description">-</p>
+            </div>
+        </div>
+
+        <!-- EQ Card -->
+        <div class="card rounded-3xl p-8 shadow-2xl mb-6">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">แบบทดสอบ EQ</h2>
+                <p class="text-gray-600">Emotional Intelligence</p>
+            </div>
+
+            <div class="flex flex-col md:flex-row items-center justify-center gap-8 mb-6">
+                <div class="text-center">
+                    <div class="text-6xl font-bold gradient-text mb-2" id="eq-score">-</div>
+                    <div class="text-sm text-gray-500">คะแนน EQ</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-gray-700 mb-2" id="eq-percentage">-</div>
+                    <div class="text-sm text-gray-500">เปอร์เซ็นต์</div>
+                </div>
+            </div>
+
+            <div class="rounded-2xl p-6 text-center mb-4" id="eq-personality"
+                 style="background: linear-gradient(135deg, #fce7f340, #fff1f240); border: 2px solid #fce7f3;">
+                <div class="text-5xl mb-3" id="personality-icon">-</div>
+                <h3 class="text-2xl font-bold mb-2" id="personality-name">-</h3>
+                <p class="text-gray-600" id="personality-description">-</p>
+            </div>
+        </div>
+
+        <!-- Advice Card -->
+        <div class="card rounded-3xl p-8 shadow-2xl mb-6 border-l-8 border-yellow-400">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">💡 คำแนะนำและการพัฒนา</h2>
+                <p class="text-gray-600">Areas for Improvement</p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-gray-50 rounded-xl p-6">
+                    <h3 class="font-bold text-indigo-600 mb-3 text-lg">ด้านเชาวน์ปัญญา (IQ)</h3>
+                    <ul id="iq-advice-list" class="list-disc list-inside text-gray-700 space-y-2 text-sm"></ul>
+                </div>
+                <div class="bg-gray-50 rounded-xl p-6">
+                    <h3 class="font-bold text-pink-600 mb-3 text-lg">ด้านความฉลาดทางอารมณ์ (EQ)</h3>
+                    <ul id="eq-advice-list" class="list-disc list-inside text-gray-700 space-y-2 text-sm"></ul>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /results-content -->
+
+    <div class="flex flex-col sm:flex-row gap-4 justify-center pb-8">
+        <button onclick="window.open('report.html', '_blank')"
+            class="px-8 py-4 rounded-xl font-semibold text-white shadow-lg transition-all transform hover:scale-105"
+            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            ⬇ ดาวน์โหลดรายงาน PDF
+        </button>
+        <button onclick="window.location.href='index.html'"
+            class="px-8 py-4 rounded-xl font-semibold bg-white text-gray-700 border-2 border-white/50 hover:bg-gray-50 transition-all">
+            ← กลับหน้าแรก
+        </button>
+    </div>
+
+</div><!-- /main UI -->
+
+
+<!-- Scripts: data layer first, then eq.js, then page logic -->
+<script src="resultData.js"></script>
+<script src="eq.js"></script>
+<script>
+// ── Page Initialisation ──────────────────────────────────────
+window.addEventListener('DOMContentLoaded', loadResults);
+
+function loadResults() {
+    const iqData = JSON.parse(localStorage.getItem('iqScore') || 'null');
+    const eqData = JSON.parse(localStorage.getItem('eqScore') || 'null');
+
+    if (!iqData || !eqData) {
+        // Uncomment the next line in production to redirect if no data:
+        // alert('ไม่พบข้อมูลผลการทดสอบ'); window.location.href = 'index.html'; return;
+        return;
+    }
+
+    // ── Display IQ on page ──────────────────────────────────
+    document.getElementById('iq-score').textContent      = iqData.iqScore;
+    document.getElementById('iq-correct').textContent    = `${iqData.correct} / ${iqData.total}`;
+    document.getElementById('iq-percentage').textContent = `${iqData.percentage}%`;
+
+    const level = getIQLevel(iqData.iqScore);   // from resultData.js
+    document.getElementById('iq-level').textContent       = level.label;
+    document.getElementById('iq-description').textContent = level.description;
+
+    // ── Display EQ on page ──────────────────────────────────
+    document.getElementById('eq-score').textContent      = eqData.eqScore;
+    document.getElementById('eq-percentage').textContent = `${eqData.percentage}%`;
+
+    if (eqData.personality) {
+        const p = eqData.personality;
+        document.getElementById('personality-name').textContent        = p.name;
+        document.getElementById('personality-description').textContent = p.description;
+        document.getElementById('personality-icon').textContent        = getPersonalityIcon(p.type);
+
+        const card = document.getElementById('eq-personality');
+        card.style.background = `linear-gradient(135deg, ${p.color}20, ${p.color}35)`;
+        card.style.borderColor = `${p.color}50`;
+    }
+
+    // ── Display Advice on page ──────────────────────────────
+    const advice = getAdvice(iqData.iqScore, eqData.eqScore);
+
+    const iqList = document.getElementById('iq-advice-list');
+    const eqList = document.getElementById('eq-advice-list');
+
+    advice.iqAdvice.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        iqList.appendChild(li);
+    });
+    advice.eqAdvice.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        eqList.appendChild(li);
+    });
+
+}
+</script>
+</body>
+</html>
